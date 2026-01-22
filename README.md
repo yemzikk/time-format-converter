@@ -109,6 +109,10 @@ MIT License - feel free to use this extension for any purpose.
 
 Found a bug or have a feature request? Please open an issue on GitHub.
 
+If you find this extension helpful, consider supporting its development:
+
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-ffdd00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/yemzikk)
+
 ## Changelog
 
 ### Version 1.0.0
