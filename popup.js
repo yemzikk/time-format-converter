@@ -1,31 +1,23 @@
-const formatCards = document.querySelectorAll(".format-card");
-const statusDiv = document.getElementById("status");
+const options = document.querySelectorAll(".option");
+const statusEl = document.getElementById("status");
 
 let currentMode = "24to12";
 let isApplying = false;
 
 function showStatus(message, isError = false) {
-  statusDiv.textContent = message;
-  statusDiv.className = `status ${isError ? "error" : "success"} show`;
+  statusEl.textContent = message;
+  statusEl.className = `status ${isError ? "error" : "success"} show`;
 
   setTimeout(() => {
-    statusDiv.classList.remove("show");
-    setTimeout(() => {
-      statusDiv.textContent = "";
-      statusDiv.className = "status";
-    }, 300);
-  }, 2500);
+    statusEl.classList.remove("show");
+  }, 2000);
 }
 
-function updateActiveCard(mode) {
-  formatCards.forEach((card) => {
-    if (card.dataset.mode === mode) {
-      card.classList.add("active");
-      card.setAttribute("aria-selected", "true");
-    } else {
-      card.classList.remove("active");
-      card.setAttribute("aria-selected", "false");
-    }
+function updateSelection(mode) {
+  options.forEach((opt) => {
+    const isActive = opt.dataset.mode === mode;
+    opt.classList.toggle("active", isActive);
+    opt.setAttribute("aria-checked", isActive);
   });
   currentMode = mode;
 }
@@ -34,7 +26,7 @@ async function applyMode(mode) {
   if (isApplying || mode === currentMode) return;
 
   isApplying = true;
-  updateActiveCard(mode);
+  updateSelection(mode);
 
   try {
     await chrome.storage.sync.set({ mode });
@@ -46,39 +38,24 @@ async function applyMode(mode) {
 
     if (tab?.id) {
       await chrome.tabs.reload(tab.id);
-      showStatus("Applied successfully");
+      showStatus("Applied");
     } else {
-      showStatus("Saved successfully");
+      showStatus("Saved");
     }
-  } catch (error) {
-    console.error("Error applying settings:", error);
-    showStatus("Error applying settings", true);
-    // Revert to previous mode
-    updateActiveCard(currentMode);
+  } catch (err) {
+    console.error("Error:", err);
+    showStatus("Failed to apply", true);
+    updateSelection(currentMode);
   } finally {
     isApplying = false;
   }
 }
 
-// Load saved mode and initialize
 chrome.storage.sync.get({ mode: "24to12" }, ({ mode }) => {
   currentMode = mode;
-  updateActiveCard(mode);
+  updateSelection(mode);
 });
 
-// Add click handlers to cards
-formatCards.forEach((card) => {
-  const mode = card.dataset.mode;
-
-  card.addEventListener("click", () => {
-    applyMode(mode);
-  });
-
-  // Keyboard accessibility
-  card.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      applyMode(mode);
-    }
-  });
+options.forEach((opt) => {
+  opt.addEventListener("click", () => applyMode(opt.dataset.mode));
 });

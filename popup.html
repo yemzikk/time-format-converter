@@ -1,88 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Time Format Converter</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>Time Format</h1>
-      </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Format</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <h1>Time Format</h1>
+    </header>
 
-      <div class="format-cards">
-        <div
-          class="format-card"
-          data-mode="24to12"
-          role="button"
-          tabindex="0"
-          aria-label="24-hour to 12-hour format"
-        >
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-              <path d="M16 2v4M8 2v4"/>
-            </svg>
-          </div>
-          <div class="card-content">
-            <h3>12-Hour</h3>
-            <p class="card-example">2:30 PM</p>
-          </div>
-          <div class="check-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-        </div>
+    <div class="options" role="radiogroup" aria-label="Time format selection">
+      <button class="option" data-mode="24to12" role="radio" aria-checked="false">
+        <span class="option-label">12-Hour</span>
+        <span class="option-example">2:30 PM</span>
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </button>
 
-        <div
-          class="format-card"
-          data-mode="12to24"
-          role="button"
-          tabindex="0"
-          aria-label="12-hour to 24-hour format"
-        >
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </div>
-          <div class="card-content">
-            <h3>24-Hour</h3>
-            <p class="card-example">14:30</p>
-          </div>
-          <div class="check-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <button class="option" data-mode="12to24" role="radio" aria-checked="false">
+        <span class="option-label">24-Hour</span>
+        <span class="option-example">14:30</span>
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </button>
     </div>
 
-    <script src="popup.js"></script>
-  </body>
-</html>
-        >
-          <div class="card-icon">🌍</div>
-          <div class="card-content">
-            <h3>24-Hour</h3>
-            <p class="card-example">14:30</p>
-            <p class="card-desc">Military time</p>
-          </div>
-          <div class="check-icon">✓</div>
-        </div>
-      </div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+  </div>
 
-      <div id="status" class="status" role="status" aria-live="polite"></div>
-    </div>
-
-    <script src="popup.js"></script>
-  </body>
+  <script src="popup.js"></script>
+</body>
 </html>
