@@ -133,3 +133,68 @@ h1 {
   background: #ffebee;
   color: #b71c1c;
 }
+
+.site-toggle {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.toggle-btn:hover {
+  background: #f9f9f9;
+  border-color: #ccc;
+}
+
+.toggle-btn:active {
+  transform: scale(0.98);
+}
+
+.toggle-btn.disabled {
+  background: #fff3e0;
+  border-color: #ffcc80;
+}
+
+.toggle-btn.disabled:hover {
+  background: #ffe0b2;
+}
+
+.toggle-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.toggle-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #666;
+}
+
+.toggle-btn.disabled .toggle-icon {
+  stroke: #f57c00;
+}
+
+.site-host {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #999;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

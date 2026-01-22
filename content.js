@@ -18,6 +18,8 @@ const SKIP_TAGS = new Set([
 
 let currentMode = "24to12";
 let isProcessing = false;
+let isDisabledForSite = false;
+const currentHostname = window.location.hostname;
 
 function convert24to12(match, h, m, s) {
   h = parseInt(h, 10);
@@ -78,7 +80,7 @@ function walk(node, mode) {
 }
 
 function apply(mode) {
-  if (isProcessing || !document.body) return;
+  if (isProcessing || !document.body || isDisabledForSite) return;
   isProcessing = true;
 
   try {
@@ -100,12 +102,16 @@ function debounce(func, delay) {
 }
 
 // Initial load
-chrome.storage.sync.get({ mode: "24to12" }, ({ mode }) => {
+chrome.storage.sync.get({ mode: "24to12", disabledSites: [] }, ({ mode, disabledSites }) => {
   currentMode = mode;
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => apply(currentMode));
-  } else {
-    apply(currentMode);
+  isDisabledForSite = disabledSites.includes(currentHostname);
+
+  if (!isDisabledForSite) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => apply(currentMode));
+    } else {
+      apply(currentMode);
+    }
   }
 });
 
@@ -136,7 +142,12 @@ if (document.body) {
 
 // Listen for storage changes
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "sync" && changes.mode) {
-    currentMode = changes.mode.newValue;
+  if (area === "sync") {
+    if (changes.mode) {
+      currentMode = changes.mode.newValue;
+    }
+    if (changes.disabledSites) {
+      isDisabledForSite = changes.disabledSites.newValue.includes(currentHostname);
+    }
   }
 });
