@@ -101,19 +101,59 @@ function debounce(func, delay) {
   };
 }
 
-// Initial load
-chrome.storage.sync.get({ mode: "24to12", disabledSites: [] }, ({ mode, disabledSites }) => {
-  currentMode = mode;
-  isDisabledForSite = disabledSites.includes(currentHostname);
-
-  if (!isDisabledForSite) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => apply(currentMode));
-    } else {
-      apply(currentMode);
-    }
+// Load default disabled sites and merge with user preferences
+async function loadDefaultDisabledSites() {
+  try {
+    const response = await fetch(
+      chrome.runtime.getURL("defaultDisabledSites.json"),
+    );
+    const data = await response.json();
+    return data.disabledSites || [];
+  } catch (error) {
+    console.error(
+      "[Time Converter] Error loading default disabled sites:",
+      error,
+    );
+    return [];
   }
-});
+}
+
+// Initial load
+(async () => {
+  const defaultDisabledSites = await loadDefaultDisabledSites();
+
+  chrome.storage.sync.get(
+    { mode: "24to12", disabledSites: [], userDisabledSites: [] },
+    ({ mode, disabledSites, userDisabledSites }) => {
+      currentMode = mode;
+
+      // Merge default disabled sites with user-added sites
+      const allDisabledSites = [
+        ...new Set([
+          ...defaultDisabledSites,
+          ...userDisabledSites,
+          ...disabledSites,
+        ]),
+      ];
+      isDisabledForSite = allDisabledSites.includes(currentHostname);
+
+      // Update storage with merged list if needed
+      if (disabledSites.length === 0 && defaultDisabledSites.length > 0) {
+        chrome.storage.sync.set({ disabledSites: defaultDisabledSites });
+      }
+
+      if (!isDisabledForSite) {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", () =>
+            apply(currentMode),
+          );
+        } else {
+          apply(currentMode);
+        }
+      }
+    },
+  );
+})();
 
 // Observe DOM changes with debouncing to prevent excessive processing
 const debouncedApply = debounce(() => {
@@ -147,7 +187,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
       currentMode = changes.mode.newValue;
     }
     if (changes.disabledSites) {
-      isDisabledForSite = changes.disabledSites.newValue.includes(currentHostname);
+      isDisabledForSite =
+        changes.disabledSites.newValue.includes(currentHostname);
     }
   }
 });
