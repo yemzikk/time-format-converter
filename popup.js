@@ -2,11 +2,14 @@ const options = document.querySelectorAll(".option");
 const statusEl = document.getElementById("status");
 const siteToggle = document.getElementById("siteToggle");
 const siteHostEl = document.getElementById("siteHost");
+const globalToggle = document.getElementById("globalToggle");
+const siteToggleContainer = document.getElementById("siteToogleContainer");
 
 let currentMode = "24to12";
 let isApplying = false;
 let currentHostname = "";
 let disabledSites = [];
+let globallyEnabled = false;
 
 function showStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -55,6 +58,19 @@ async function applyMode(mode) {
   }
 }
 
+function updateGlobalToggle(enabled) {
+  const toggleText = globalToggle.querySelector(".toggle-text");
+  if (enabled) {
+    toggleText.textContent = "Disable for all sites";
+    globalToggle.classList.add("enabled");
+    siteToggleContainer.style.display = "block";
+  } else {
+    toggleText.textContent = "Enable for all sites";
+    globalToggle.classList.remove("enabled");
+    siteToggleContainer.style.display = "none";
+  }
+}
+
 function updateSiteToggle(isDisabled) {
   const toggleText = siteToggle.querySelector(".toggle-text");
   if (isDisabled) {
@@ -63,6 +79,29 @@ function updateSiteToggle(isDisabled) {
   } else {
     toggleText.textContent = "Disable for this site";
     siteToggle.classList.remove("disabled");
+  }
+}
+
+async function toggleGlobal() {
+  const newState = !globallyEnabled;
+
+  try {
+    await chrome.storage.sync.set({ globallyEnabled: newState });
+    globallyEnabled = newState;
+    updateGlobalToggle(newState);
+
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (tab?.id) {
+      await chrome.tabs.reload(tab.id);
+      showStatus(newState ? "Enabled for all sites" : "Disabled for all sites");
+    }
+  } catch (err) {
+    console.error("Error toggling global state:", err);
+    showStatus("Failed to toggle", true);
   }
 }
 
@@ -108,24 +147,34 @@ async function initSiteToggle() {
       currentHostname = url.hostname;
       siteHostEl.textContent = currentHostname;
 
-      const isDisabled = disabledSites.includes(currentHostname);
-      updateSiteToggle(isDisabled);
+      if (globallyEnabled) {
+        const isDisabled = disabledSites.includes(currentHostname);
+        updateSiteToggle(isDisabled);
+      } else {
+        siteToggleContainer.style.display = "none";
+      }
     }
   } catch (err) {
     console.error("Error getting tab:", err);
-    siteToggle.style.display = "none";
+    siteToggleContainer.style.display = "none";
   }
 }
 
-chrome.storage.sync.get({ mode: "24to12", disabledSites: [] }, (data) => {
-  currentMode = data.mode;
-  disabledSites = data.disabledSites;
-  updateSelection(currentMode);
-  initSiteToggle();
-});
+chrome.storage.sync.get(
+  { mode: "24to12", disabledSites: [], globallyEnabled: false },
+  (data) => {
+    currentMode = data.mode;
+    disabledSites = data.disabledSites;
+    globallyEnabled = data.globallyEnabled;
+    updateSelection(currentMode);
+    updateGlobalToggle(globallyEnabled);
+    initSiteToggle();
+  },
+);
 
 options.forEach((opt) => {
   opt.addEventListener("click", () => applyMode(opt.dataset.mode));
 });
 
+globalToggle.addEventListener("click", toggleGlobal);
 siteToggle.addEventListener("click", toggleSite);

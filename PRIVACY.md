@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: January 22, 2026**
+**Last Updated: February 23, 2026**
 
 ## Auto Time Format Converter - Privacy Policy
 
@@ -13,8 +13,10 @@ This extension **does NOT collect, store, or transmit any personal data**.
 The only data stored is:
 
 - **Your conversion preference** (24-hour to 12-hour OR 12-hour to 24-hour)
+- **Global enable/disable status** (whether the extension is active)
+- **Per-site disabled list** (sites where you've disabled the extension)
 
-This preference is stored locally using Chrome's `chrome.storage.sync` API, which may sync across your devices if you're signed into Chrome.
+This data is stored locally using Chrome's `chrome.storage.sync` API, which may sync across your devices if you're signed into Chrome.
 
 ### Permissions Explained
 
@@ -26,9 +28,10 @@ This preference is stored locally using Chrome's `chrome.storage.sync` API, whic
 
 #### Host Permissions (All URLs)
 
-- **Why**: To convert time formats on webpages you visit
+- **Why**: To convert time formats on webpages you visit (when enabled)
 - **What**: The extension reads and modifies text content containing times
 - **Where**: Entirely local - no data leaves your browser
+- **Control**: The extension is disabled by default and only runs when you enable it globally
 
 ### Third-Party Services
 
@@ -53,12 +56,19 @@ Questions about privacy? Open an issue on our GitHub repository.
 
 ## Your Rights
 
-You can:
+You have full control:
 
-- Clear your preference by uninstalling the extension
-- View your stored preference in Chrome DevTools (Chrome Storage)
-- Disable the extension at any time
+- **Enable/Disable**: Toggle the extension globally with one click
+- **Per-Site Control**: Disable the extension for specific websites
+- **Clear Data**: Clear your preferences by uninstalling the extension
+- **View Data**: View your stored preferences in Chrome DevTools (Chrome Storage)
+- **Disable Anytime**: You can disable the extension at any time
 
 ---
 
-**Summary**: This extension is completely private. It works offline, stores only your preference locally, and never sends any data anywhere.
+**Summary**: This extension is completely private and respects your privacy:
+
+- Disabled by default - you must explicitly enable it
+- Works offline with all processing done locally
+- Stores only your preferences and per-site settings
+- Never sends any data anywhere

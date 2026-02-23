@@ -4,7 +4,9 @@ A Chrome extension that automatically converts between 12-hour and 24-hour time 
 
 ## Features
 
-- ✅ **Automatic Conversion**: Converts times as pages load and update dynamically
+- ✅ **Disabled by Default**: Respects privacy - disabled for all sites until you enable it
+- ✅ **Global Control**: Enable or disable for all sites with one click
+- ✅ **Per-Site Toggle**: Selectively disable for specific websites when globally enabled
 - 🔄 **Two Modes**:
   - 24-Hour → 12-Hour (AM/PM)
   - 12-Hour (AM/PM) → 24-Hour
@@ -28,12 +30,23 @@ _(Coming soon)_
 
 ## Usage
 
+### First Time Setup
+
 1. Click the extension icon in your Chrome toolbar
-2. Select your preferred conversion mode:
+2. Click "Enable for all sites" to activate the extension
+
+### Converting Times
+
+1. Select your preferred conversion mode:
    - **24-Hour → 12-Hour**: Converts times like `14:30` to `2:30 PM`
    - **12-Hour → 24-Hour**: Converts times like `2:30 PM` to `14:30`
-3. Click "Apply & Reload Page"
-4. The page will reload with all times converted
+2. The conversion applies automatically
+3. The page will reload to apply changes
+
+### Managing Per-Site Settings
+
+- When globally enabled, you can click "Disable for this site" to exclude specific websites
+- The site toggle will only appear when the extension is globally enabled
 
 ## Examples
 
@@ -55,16 +68,17 @@ _(Coming soon)_
 
 This extension:
 
+- ✅ **Disabled by default** - Respects your privacy by requiring explicit enablement
 - ✅ Works completely offline
-- ✅ Only stores your preference locally
+- ✅ Only stores your preferences locally (global setting and per-site overrides)
 - ✅ Does NOT collect any personal data
 - ✅ Does NOT track your browsing
 - ✅ Does NOT send data to external servers
 
 ## Permissions
 
-- **Storage**: To save your conversion preference
-- **Host Permissions**: To convert times on all websites you visit
+- **Storage**: To save your conversion preference and per-site settings
+- **Host Permissions**: To convert times on websites (only when globally enabled)
 
 ## Technical Details
 
@@ -114,6 +128,13 @@ If you find this extension helpful, consider supporting its development:
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-ffdd00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/yemzikk)
 
 ## Changelog
+
+### Version 1.1.0
+
+- Disabled by default for all sites
+- Global enable/disable toggle
+- Per-site toggle control when globally enabled
+- Improved privacy settings
 
 ### Version 1.0.0
 

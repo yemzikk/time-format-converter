@@ -1,53 +1,103 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Format</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-      <h1>Time Format</h1>
-    </header>
-
-    <div class="options" role="radiogroup" aria-label="Time format selection">
-      <button class="option" data-mode="24to12" role="radio" aria-checked="false">
-        <span class="option-label">12-Hour</span>
-        <span class="option-example">2:30 PM</span>
-        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="20 6 9 17 4 12"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Format</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <svg
+          class="logo"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
         </svg>
-      </button>
+        <h1>Time Format</h1>
+      </header>
 
-      <button class="option" data-mode="12to24" role="radio" aria-checked="false">
-        <span class="option-label">24-Hour</span>
-        <span class="option-example">14:30</span>
-        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-      </button>
+      <div class="options" role="radiogroup" aria-label="Time format selection">
+        <button
+          class="option"
+          data-mode="24to12"
+          role="radio"
+          aria-checked="false"
+        >
+          <span class="option-label">12-Hour</span>
+          <span class="option-example">2:30 PM</span>
+          <svg
+            class="check"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+
+        <button
+          class="option"
+          data-mode="12to24"
+          role="radio"
+          aria-checked="false"
+        >
+          <span class="option-label">24-Hour</span>
+          <span class="option-example">14:30</span>
+          <svg
+            class="check"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="global-toggle">
+        <button id="globalToggle" class="toggle-btn global">
+          <span class="toggle-text">Enable for all sites</span>
+          <svg
+            class="toggle-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="site-toggle" id="siteToogleContainer">
+        <button id="siteToggle" class="toggle-btn">
+          <span class="toggle-text">Disable for this site</span>
+          <svg
+            class="toggle-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+          </svg>
+        </button>
+        <span id="siteHost" class="site-host"></span>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
     </div>
 
-    <div class="site-toggle">
-      <button id="siteToggle" class="toggle-btn">
-        <span class="toggle-text">Disable for this site</span>
-        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-        </svg>
-      </button>
-      <span id="siteHost" class="site-host"></span>
-    </div>
-
-    <div id="status" class="status" role="status" aria-live="polite"></div>
-  </div>
-
-  <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script>
+  </body>
 </html>

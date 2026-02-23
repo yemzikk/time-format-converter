@@ -19,6 +19,7 @@ const SKIP_TAGS = new Set([
 let currentMode = "24to12";
 let isProcessing = false;
 let isDisabledForSite = false;
+let globallyEnabled = false;
 const currentHostname = window.location.hostname;
 
 function convert24to12(match, h, m, s) {
@@ -102,6 +103,8 @@ function debounce(func, delay) {
 }
 
 // Load default disabled sites and merge with user preferences
+// Note: This function is deprecated. Sites are now disabled by default via the globallyEnabled flag.
+// Keeping this for backward compatibility with older installations.
 async function loadDefaultDisabledSites() {
   try {
     const response = await fetch(
@@ -110,36 +113,24 @@ async function loadDefaultDisabledSites() {
     const data = await response.json();
     return data.disabledSites || [];
   } catch (error) {
-    console.error(
-      "[Time Converter] Error loading default disabled sites:",
-      error,
-    );
     return [];
   }
 }
 
 // Initial load
 (async () => {
-  const defaultDisabledSites = await loadDefaultDisabledSites();
-
   chrome.storage.sync.get(
-    { mode: "24to12", disabledSites: [], userDisabledSites: [] },
-    ({ mode, disabledSites, userDisabledSites }) => {
+    { mode: "24to12", disabledSites: [], globallyEnabled: false },
+    ({ mode, disabledSites, globallyEnabled: enabled }) => {
       currentMode = mode;
+      globallyEnabled = enabled;
 
-      // Merge default disabled sites with user-added sites
-      const allDisabledSites = [
-        ...new Set([
-          ...defaultDisabledSites,
-          ...userDisabledSites,
-          ...disabledSites,
-        ]),
-      ];
-      isDisabledForSite = allDisabledSites.includes(currentHostname);
-
-      // Update storage with merged list if needed
-      if (disabledSites.length === 0 && defaultDisabledSites.length > 0) {
-        chrome.storage.sync.set({ disabledSites: defaultDisabledSites });
+      // If globally disabled, don't apply
+      if (!globallyEnabled) {
+        isDisabledForSite = true;
+      } else {
+        // If globally enabled, check if this specific site is disabled
+        isDisabledForSite = disabledSites.includes(currentHostname);
       }
 
       if (!isDisabledForSite) {
@@ -186,9 +177,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (changes.mode) {
       currentMode = changes.mode.newValue;
     }
+    if (changes.globallyEnabled) {
+      globallyEnabled = changes.globallyEnabled.newValue;
+      if (!globallyEnabled) {
+        isDisabledForSite = true;
+      } else {
+        isDisabledForSite = disabledSites.includes(currentHostname);
+      }
+    }
     if (changes.disabledSites) {
-      isDisabledForSite =
-        changes.disabledSites.newValue.includes(currentHostname);
+      const newDisabledSites = changes.disabledSites.newValue;
+      if (globallyEnabled) {
+        isDisabledForSite = newDisabledSites.includes(currentHostname);
+      }
     }
   }
 });
