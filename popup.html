@@ -62,37 +62,25 @@
         </button>
       </div>
 
-      <div class="global-toggle">
-        <button id="globalToggle" class="toggle-btn global">
-          <span class="toggle-text">Enable for all sites</span>
-          <svg
-            class="toggle-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </button>
+      <div class="divider"></div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">All sites</span>
+        <label class="switch" title="Enable or disable on all sites">
+          <input type="checkbox" id="globalToggle" />
+          <span class="slider"></span>
+        </label>
       </div>
 
-      <div class="site-toggle" id="siteToogleContainer">
-        <button id="siteToggle" class="toggle-btn">
-          <span class="toggle-text">Disable for this site</span>
-          <svg
-            class="toggle-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-          </svg>
-        </button>
-        <span id="siteHost" class="site-host"></span>
+      <div class="toggle-row" id="siteToggleRow" style="display: none">
+        <div class="toggle-info">
+          <span class="toggle-label">This site</span>
+          <span class="toggle-sublabel" id="siteHost"></span>
+        </div>
+        <label class="switch" title="Enable or disable for this site">
+          <input type="checkbox" id="siteToggle" />
+          <span class="slider"></span>
+        </label>
       </div>
 
       <div id="status" class="status" role="status" aria-live="polite"></div>

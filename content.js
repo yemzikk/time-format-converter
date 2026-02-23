@@ -5,6 +5,7 @@ const TIME_12 =
   /\b(1[0-2]|0?[1-9]):([0-5]\d)(?::([0-5]\d))?\s*(AM|PM|am|pm)\b/gi;
 
 const PROCESSED_ATTR = "data-time-converted";
+const ORIGINAL_ATTR = "data-original";
 const SKIP_TAGS = new Set([
   "SCRIPT",
   "STYLE",
@@ -18,8 +19,12 @@ const SKIP_TAGS = new Set([
 
 let currentMode = "24to12";
 let isProcessing = false;
+let isReverting = false;
 let isDisabledForSite = false;
 let globallyEnabled = false;
+let disabledSites = []; // fix: module-level variable so storage.onChanged can read it
+let debounceTimer;
+
 const currentHostname = window.location.hostname;
 
 function convert24to12(match, h, m, s) {
@@ -29,21 +34,16 @@ function convert24to12(match, h, m, s) {
   return s ? `${h}:${m}:${s} ${ampm}` : `${h}:${m} ${ampm}`;
 }
 
-function convert12to24(match, h, m, s, ap) {
+function convert12to24(_match, h, m, s, ap) {
   h = parseInt(h, 10);
-  const isPM = ap.toUpperCase() === "PM";
-  const isAM = ap.toUpperCase() === "AM";
-
-  if (isPM && h !== 12) h += 12;
-  if (isAM && h === 12) h = 0;
-
+  if (ap.toUpperCase() === "PM" && h !== 12) h += 12;
+  if (ap.toUpperCase() === "AM" && h === 12) h = 0;
   const hourStr = h.toString().padStart(2, "0");
   return s ? `${hourStr}:${m}:${s}` : `${hourStr}:${m}`;
 }
 
 function walk(node, mode) {
   if (node.nodeType === Node.TEXT_NODE) {
-    // Skip if parent is already processed or is a skip tag
     const parent = node.parentElement;
     if (
       !parent ||
@@ -65,6 +65,7 @@ function walk(node, mode) {
       const span = document.createElement("span");
       span.textContent = newText;
       span.setAttribute(PROCESSED_ATTR, "true");
+      span.setAttribute(ORIGINAL_ATTR, text); // store original for instant revert
       span.style.display = "inline";
       node.replaceWith(span);
     }
@@ -72,18 +73,32 @@ function walk(node, mode) {
   }
 
   if (node.nodeType === Node.ELEMENT_NODE && !SKIP_TAGS.has(node.tagName)) {
-    // Process children
-    const children = Array.from(node.childNodes);
-    for (const child of children) {
+    for (const child of Array.from(node.childNodes)) {
       walk(child, mode);
     }
+  }
+}
+
+// Restores all converted spans back to their original text nodes
+function revert() {
+  if (!document.body) return;
+  isReverting = true;
+  clearTimeout(debounceTimer); // cancel any pending debounced apply
+  try {
+    for (const el of document.querySelectorAll(`[${PROCESSED_ATTR}]`)) {
+      const original = el.getAttribute(ORIGINAL_ATTR);
+      if (original !== null) {
+        el.replaceWith(document.createTextNode(original));
+      }
+    }
+  } finally {
+    isReverting = false;
   }
 }
 
 function apply(mode) {
   if (isProcessing || !document.body || isDisabledForSite) return;
   isProcessing = true;
-
   try {
     walk(document.body, mode);
   } catch (error) {
@@ -93,103 +108,86 @@ function apply(mode) {
   }
 }
 
-// Debounce function for mutation observer
-let debounceTimer;
-function debounce(func, delay) {
-  return function (...args) {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => func.apply(this, args), delay);
-  };
-}
-
-// Load default disabled sites and merge with user preferences
-// Note: This function is deprecated. Sites are now disabled by default via the globallyEnabled flag.
-// Keeping this for backward compatibility with older installations.
-async function loadDefaultDisabledSites() {
-  try {
-    const response = await fetch(
-      chrome.runtime.getURL("defaultDisabledSites.json"),
-    );
-    const data = await response.json();
-    return data.disabledSites || [];
-  } catch (error) {
-    return [];
-  }
+function debouncedApply() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    if (!isReverting && !isDisabledForSite) apply(currentMode);
+  }, 250);
 }
 
 // Initial load
-(async () => {
-  chrome.storage.sync.get(
-    { mode: "24to12", disabledSites: [], globallyEnabled: false },
-    ({ mode, disabledSites, globallyEnabled: enabled }) => {
-      currentMode = mode;
-      globallyEnabled = enabled;
+chrome.storage.sync.get(
+  { mode: "24to12", disabledSites: [], globallyEnabled: false },
+  ({ mode, disabledSites: sites, globallyEnabled: enabled }) => {
+    currentMode = mode;
+    globallyEnabled = enabled;
+    disabledSites = sites;
+    isDisabledForSite = !globallyEnabled || disabledSites.includes(currentHostname);
 
-      // If globally disabled, don't apply
-      if (!globallyEnabled) {
-        isDisabledForSite = true;
+    if (!isDisabledForSite) {
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => apply(currentMode));
       } else {
-        // If globally enabled, check if this specific site is disabled
-        isDisabledForSite = disabledSites.includes(currentHostname);
+        apply(currentMode);
       }
+    }
+  },
+);
 
-      if (!isDisabledForSite) {
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", () =>
-            apply(currentMode),
-          );
-        } else {
-          apply(currentMode);
-        }
-      }
-    },
-  );
-})();
-
-// Observe DOM changes with debouncing to prevent excessive processing
-const debouncedApply = debounce(() => {
-  apply(currentMode);
-}, 250);
-
+// Observe DOM changes for dynamically loaded content
 const observer = new MutationObserver((mutations) => {
-  // Only process if there are actual text changes
+  if (isReverting || isDisabledForSite) return;
   const hasTextChanges = mutations.some(
     (mutation) =>
       mutation.type === "childList" &&
       (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0),
   );
-
-  if (hasTextChanges) {
-    debouncedApply();
-  }
+  if (hasTextChanges) debouncedApply();
 });
 
 if (document.body) {
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
-// Listen for storage changes
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "sync") {
-    if (changes.mode) {
-      currentMode = changes.mode.newValue;
+// Listen for instant state updates from the popup (no page reload needed)
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.action === "updateState") {
+    const {
+      mode: newMode,
+      globallyEnabled: newGloballyEnabled,
+      disabledSites: newDisabledSites,
+    } = message;
+
+    const wasDisabled = isDisabledForSite;
+    const modeChanged = newMode !== currentMode;
+
+    currentMode = newMode;
+    globallyEnabled = newGloballyEnabled;
+    disabledSites = newDisabledSites;
+    isDisabledForSite =
+      !globallyEnabled || disabledSites.includes(currentHostname);
+
+    if (isDisabledForSite) {
+      if (!wasDisabled) revert(); // was on, now off — revert
+    } else {
+      if (modeChanged) revert(); // switching mode — revert then re-apply
+      apply(currentMode); // apply (idempotent; handles newly loaded content too)
     }
-    if (changes.globallyEnabled) {
-      globallyEnabled = changes.globallyEnabled.newValue;
-      if (!globallyEnabled) {
-        isDisabledForSite = true;
-      } else {
-        isDisabledForSite = disabledSites.includes(currentHostname);
-      }
-    }
-    if (changes.disabledSites) {
-      const newDisabledSites = changes.disabledSites.newValue;
-      if (globallyEnabled) {
-        isDisabledForSite = newDisabledSites.includes(currentHostname);
-      }
-    }
+
+    sendResponse({ success: true });
   }
+  return true;
+});
+
+// Sync state changes from other tabs / popup instances
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "sync") return;
+  if (changes.mode) currentMode = changes.mode.newValue;
+  if (changes.globallyEnabled) globallyEnabled = changes.globallyEnabled.newValue;
+  if (changes.disabledSites) disabledSites = changes.disabledSites.newValue;
+
+  // Recompute disabled state (the popup message handler already handles the
+  // current tab; this covers changes coming from other contexts)
+  isDisabledForSite =
+    !globallyEnabled || disabledSites.includes(currentHostname);
 });

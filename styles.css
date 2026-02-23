@@ -35,6 +35,8 @@ h1 {
   letter-spacing: -0.3px;
 }
 
+/* ── Format options ────────────────────────────────── */
+
 .options {
   display: flex;
   flex-direction: column;
@@ -50,21 +52,21 @@ h1 {
   border: 2px solid transparent;
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
   text-align: left;
   font-family: inherit;
 }
 
-.option:hover {
+.option:hover:not(:disabled) {
   background: #ebebeb;
 }
 
-.option:focus {
+.option:focus-visible {
   outline: none;
   border-color: #111;
 }
 
-.option:active {
+.option:active:not(:disabled) {
   transform: scale(0.98);
 }
 
@@ -80,6 +82,17 @@ h1 {
 
 .option.active .check {
   opacity: 1;
+}
+
+/* Dimmed when extension is globally disabled */
+.option.dimmed {
+  opacity: 0.38;
+  cursor: default;
+  pointer-events: none;
+}
+
+.option:disabled {
+  cursor: default;
 }
 
 .option-label {
@@ -108,8 +121,109 @@ h1 {
   flex-shrink: 0;
 }
 
-.status {
+/* ── Divider ───────────────────────────────────────── */
+
+.divider {
+  margin: 16px 0;
+  border-top: 1px solid #eee;
+}
+
+/* ── Toggle rows ───────────────────────────────────── */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.toggle-row + .toggle-row {
   margin-top: 12px;
+}
+
+.toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
+}
+
+.toggle-sublabel {
+  font-size: 11px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 185px;
+}
+
+/* ── Toggle switch ─────────────────────────────────── */
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #ddd;
+  border-radius: 22px;
+  transition: background-color 0.2s ease;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.switch input:checked + .slider {
+  background: #111;
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+.switch input:focus-visible + .slider {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.switch input:disabled + .slider {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── Status bar ────────────────────────────────────── */
+
+.status {
+  margin-top: 14px;
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 500;
@@ -117,7 +231,7 @@ h1 {
   border-radius: 8px;
   opacity: 0;
   transform: translateY(4px);
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .status.show {
@@ -133,96 +247,4 @@ h1 {
 .status.error {
   background: #ffebee;
   color: #b71c1c;
-}
-
-.global-toggle {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-}
-
-.site-toggle {
-  margin-top: 12px;
-}
-
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 10px 14px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-}
-
-.toggle-btn:hover {
-  background: #f9f9f9;
-  border-color: #ccc;
-}
-
-.toggle-btn:active {
-  transform: scale(0.98);
-}
-
-.toggle-btn.disabled {
-  background: #fff3e0;
-  border-color: #ffcc80;
-}
-
-.toggle-btn.disabled:hover {
-  background: #ffe0b2;
-}
-
-.toggle-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: #333;
-}
-
-.toggle-icon {
-  width: 16px;
-  height: 16px;
-  stroke: #666;
-}
-
-.toggle-btn.disabled .toggle-icon {
-  stroke: #f57c00;
-}
-
-.toggle-btn.global {
-  background: #f0f7ff;
-  border-color: #b3d9ff;
-}
-
-.toggle-btn.global:hover {
-  background: #e0f0ff;
-  border-color: #80b3ff;
-}
-
-.toggle-btn.global.enabled {
-  background: #e3f2fd;
-  border-color: #42a5f5;
-}
-
-.toggle-btn.global.enabled .toggle-text {
-  color: #1976d2;
-}
-
-.toggle-btn.global.enabled .toggle-icon {
-  stroke: #1976d2;
-}
-
-.site-host {
-  display: block;
-  margin-top: 8px;
-  font-size: 11px;
-  color: #999;
-  text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
