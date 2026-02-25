@@ -22,7 +22,8 @@ let isProcessing = false;
 let isReverting = false;
 let isDisabledForSite = false;
 let globallyEnabled = false;
-let disabledSites = []; // fix: module-level variable so storage.onChanged can read it
+let disabledSites = [];  // blacklist: excluded when global is ON
+let enabledSites = [];   // whitelist: included when global is OFF
 let debounceTimer;
 
 const currentHostname = window.location.hostname;
@@ -115,14 +116,22 @@ function debouncedApply() {
   }, 250);
 }
 
+function computeIsDisabled() {
+  if (globallyEnabled) {
+    return disabledSites.includes(currentHostname);
+  }
+  return !enabledSites.includes(currentHostname);
+}
+
 // Initial load
 chrome.storage.sync.get(
-  { mode: "24to12", disabledSites: [], globallyEnabled: false },
-  ({ mode, disabledSites: sites, globallyEnabled: enabled }) => {
+  { mode: "24to12", disabledSites: [], enabledSites: [], globallyEnabled: false },
+  ({ mode, disabledSites: sites, enabledSites: wl, globallyEnabled: enabled }) => {
     currentMode = mode;
     globallyEnabled = enabled;
     disabledSites = sites;
-    isDisabledForSite = !globallyEnabled || disabledSites.includes(currentHostname);
+    enabledSites = wl;
+    isDisabledForSite = computeIsDisabled();
 
     if (!isDisabledForSite) {
       if (document.readyState === "loading") {
@@ -156,6 +165,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       mode: newMode,
       globallyEnabled: newGloballyEnabled,
       disabledSites: newDisabledSites,
+      enabledSites: newEnabledSites,
     } = message;
 
     const wasDisabled = isDisabledForSite;
@@ -164,8 +174,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     currentMode = newMode;
     globallyEnabled = newGloballyEnabled;
     disabledSites = newDisabledSites;
-    isDisabledForSite =
-      !globallyEnabled || disabledSites.includes(currentHostname);
+    enabledSites = newEnabledSites;
+    isDisabledForSite = computeIsDisabled();
 
     if (isDisabledForSite) {
       if (!wasDisabled) revert(); // was on, now off — revert
@@ -185,9 +195,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.mode) currentMode = changes.mode.newValue;
   if (changes.globallyEnabled) globallyEnabled = changes.globallyEnabled.newValue;
   if (changes.disabledSites) disabledSites = changes.disabledSites.newValue;
+  if (changes.enabledSites) enabledSites = changes.enabledSites.newValue;
 
-  // Recompute disabled state (the popup message handler already handles the
-  // current tab; this covers changes coming from other contexts)
-  isDisabledForSite =
-    !globallyEnabled || disabledSites.includes(currentHostname);
+  // Recompute disabled state (popup message handler handles the current tab;
+  // this covers changes arriving from other contexts)
+  isDisabledForSite = computeIsDisabled();
 });

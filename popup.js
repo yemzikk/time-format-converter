@@ -8,7 +8,8 @@ const siteToggleRow = document.getElementById("siteToggleRow");
 let currentMode = "24to12";
 let isApplying = false;
 let currentHostname = "";
-let disabledSites = [];
+let disabledSites = [];  // blacklist: excluded when global is ON
+let enabledSites = [];   // whitelist: included when global is OFF
 let globallyEnabled = false;
 
 function showStatus(message, isError = false) {
@@ -32,15 +33,27 @@ function updateSelection(mode) {
 }
 
 function updateOptionsState() {
-  options.forEach((opt) => opt.classList.toggle("dimmed", !globallyEnabled));
+  // Before the hostname is resolved, use the global flag as a best guess.
+  // initSiteToggle calls this again once currentHostname is known.
+  const siteActive = currentHostname
+    ? globallyEnabled
+      ? !disabledSites.includes(currentHostname)
+      : enabledSites.includes(currentHostname)
+    : globallyEnabled;
+  options.forEach((opt) => opt.classList.toggle("dimmed", !siteActive));
 }
 
-function updateGlobalUI() {
-  siteToggleRow.style.display = globallyEnabled ? "flex" : "none";
+// Reflect whether the current site is active (accounts for both global mode and site lists)
+function refreshSiteToggle() {
+  if (!currentHostname) return;
+  const isActive = globallyEnabled
+    ? !disabledSites.includes(currentHostname)
+    : enabledSites.includes(currentHostname);
+  siteToggleInput.checked = isActive;
 }
 
 // Sends the current state to the active tab's content script.
-// Returns true if the message was delivered, false if the tab has no content script.
+// Returns true if delivered, false if the tab has no content script.
 async function notifyContentScript() {
   try {
     const [tab] = await chrome.tabs.query({
@@ -53,6 +66,7 @@ async function notifyContentScript() {
       mode: currentMode,
       globallyEnabled,
       disabledSites,
+      enabledSites,
     });
     return true;
   } catch {
@@ -96,18 +110,16 @@ async function toggleGlobal() {
   try {
     await chrome.storage.sync.set({ globallyEnabled: newState });
     globallyEnabled = newState;
-    updateGlobalUI();
+    // Reflect the correct active state for the current site after global change
+    refreshSiteToggle();
     updateOptionsState();
-    const reached = await notifyContentScript();
+    await notifyContentScript();
     showStatus(newState ? "Enabled for all sites" : "Disabled for all sites");
-    if (!reached && newState) {
-      // Content script not reachable on this tab type; state is saved
-    }
   } catch (err) {
     console.error("Error toggling global state:", err);
     globallyEnabled = prevState;
     globalToggleInput.checked = prevState;
-    updateGlobalUI();
+    refreshSiteToggle();
     updateOptionsState();
     showStatus("Failed to toggle", true);
   } finally {
@@ -119,24 +131,34 @@ async function toggleGlobal() {
 async function toggleSite() {
   if (isApplying || !currentHostname) return;
 
-  const siteEnabled = siteToggleInput.checked; // checked = site is ON
+  const siteActive = siteToggleInput.checked; // checked = site is ON
   const prevDisabledSites = [...disabledSites];
+  const prevEnabledSites = [...enabledSites];
   isApplying = true;
   setLoading(true);
 
-  // checked means site is enabled → remove from disabled list
-  disabledSites = siteEnabled
-    ? disabledSites.filter((s) => s !== currentHostname)
-    : [...disabledSites, currentHostname];
+  if (globallyEnabled) {
+    // Blacklist mode: toggling OFF adds to disabledSites, ON removes
+    disabledSites = siteActive
+      ? disabledSites.filter((s) => s !== currentHostname)
+      : [...disabledSites, currentHostname];
+  } else {
+    // Whitelist mode: toggling ON adds to enabledSites, OFF removes
+    enabledSites = siteActive
+      ? [...enabledSites.filter((s) => s !== currentHostname), currentHostname]
+      : enabledSites.filter((s) => s !== currentHostname);
+  }
 
   try {
-    await chrome.storage.sync.set({ disabledSites });
+    await chrome.storage.sync.set({ disabledSites, enabledSites });
     await notifyContentScript();
-    showStatus(siteEnabled ? "Enabled for this site" : "Disabled for this site");
+    updateOptionsState();
+    showStatus(siteActive ? "Enabled for this site" : "Disabled for this site");
   } catch (err) {
     console.error("Error toggling site:", err);
     disabledSites = prevDisabledSites;
-    siteToggleInput.checked = !siteEnabled;
+    enabledSites = prevEnabledSites;
+    siteToggleInput.checked = !siteActive;
     showStatus("Failed to toggle", true);
   } finally {
     isApplying = false;
@@ -155,7 +177,9 @@ async function initSiteToggle() {
       const url = new URL(tab.url);
       currentHostname = url.hostname;
       siteHostEl.textContent = currentHostname;
-      siteToggleInput.checked = !disabledSites.includes(currentHostname);
+      siteToggleRow.style.display = "flex";
+      refreshSiteToggle();
+      updateOptionsState();
     } else {
       siteToggleRow.style.display = "none";
     }
@@ -167,17 +191,17 @@ async function initSiteToggle() {
 
 // Bootstrap
 chrome.storage.sync.get(
-  { mode: "24to12", disabledSites: [], globallyEnabled: false },
+  { mode: "24to12", disabledSites: [], enabledSites: [], globallyEnabled: false },
   (data) => {
     currentMode = data.mode;
     disabledSites = data.disabledSites;
+    enabledSites = data.enabledSites;
     globallyEnabled = data.globallyEnabled;
 
     updateSelection(currentMode);
     globalToggleInput.checked = globallyEnabled;
-    updateGlobalUI();
-    updateOptionsState();
-    initSiteToggle();
+    updateOptionsState(); // preliminary: dims options before hostname is resolved
+    initSiteToggle();     // refines once hostname is known
   },
 );
 
